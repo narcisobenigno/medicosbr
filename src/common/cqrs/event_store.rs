@@ -1,43 +1,19 @@
+use crate::common::cqrs;
 use std::fmt;
 
-pub trait Event: PartialEq + fmt::Debug {
-    fn name() -> String;
-}
-
-#[derive(PartialEq, Debug)]
-pub struct EventEnvelop<E>
-where
-    E: Event,
-{
-    aggregate_id: String,
-    payload: E,
-}
-
-impl<E> EventEnvelop<E>
-where
-    E: Event,
-{
-    fn new(aggregate_id: String, payload: E) -> Self {
-        Self {
-            aggregate_id: aggregate_id,
-            payload: payload,
-        }
-    }
-}
-
-pub trait EventStore<T: Event>: fmt::Debug {
-    fn load(&self, id: String) -> Vec<&EventEnvelop<T>>;
-    fn save(&mut self, events: Vec<EventEnvelop<T>>) -> Result<(), &'static str>;
+pub trait EventStore<T: cqrs::Event>: fmt::Debug {
+    fn load(&self, id: String) -> Vec<&cqrs::EventEnvelop<T>>;
+    fn save(&mut self, events: Vec<cqrs::EventEnvelop<T>>) -> Result<(), &'static str>;
 }
 
 #[derive(Debug)]
-pub struct MemoryEventStore<T: Event> {
-    items: Vec<EventEnvelop<T>>,
+pub struct MemoryEventStore<T: cqrs::Event> {
+    items: Vec<cqrs::EventEnvelop<T>>,
 }
 
 impl<T> Default for MemoryEventStore<T>
 where
-    T: Event,
+    T: cqrs::Event,
 {
     fn default() -> Self {
         MemoryEventStore { items: vec![] }
@@ -46,16 +22,16 @@ where
 
 impl<T> EventStore<T> for MemoryEventStore<T>
 where
-    T: Event,
+    T: cqrs::Event,
 {
-    fn load(&self, id: String) -> Vec<&EventEnvelop<T>> {
+    fn load(&self, id: String) -> Vec<&cqrs::EventEnvelop<T>> {
         self.items
             .iter()
-            .filter(|item| item.aggregate_id == id)
+            .filter(|event| event.has_id(id.to_string()))
             .collect()
     }
 
-    fn save(&mut self, events: Vec<EventEnvelop<T>>) -> Result<(), &'static str> {
+    fn save(&mut self, events: Vec<cqrs::EventEnvelop<T>>) -> Result<(), &'static str> {
         self.items.extend(events);
         Ok(())
     }
@@ -63,12 +39,13 @@ where
 
 #[cfg(test)]
 mod test {
+    use super::*;
     use crate::common::cqrs;
     use crate::common::cqrs::EventStore;
 
     #[test]
     fn it_adds_to_mem_event_store() {
-        let mut store = cqrs::MemoryEventStore::default();
+        let mut store = MemoryEventStore::default();
         store.save(vec![
             cqrs::EventEnvelop::new(
                 "aggregate-id-1".to_string(),
