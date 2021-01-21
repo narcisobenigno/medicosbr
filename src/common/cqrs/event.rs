@@ -17,15 +17,15 @@ impl<E> EventEnvelop<E>
 where
     E: Event,
 {
-    pub fn new(aggregate_id: String, payload: E) -> Self {
+    pub fn new(aggregate_id: &str, payload: E) -> Self {
         Self {
-            aggregate_id: aggregate_id,
+            aggregate_id: aggregate_id.to_string(),
             payload: payload,
         }
     }
 
-    pub fn has_id(&self, id: String) -> bool {
-        self.aggregate_id == id
+    pub fn has_id(&self, id: &str) -> bool {
+        self.aggregate_id == id.to_string()
     }
 }
 
@@ -35,14 +35,14 @@ mod test {
 
     #[test]
     fn it_has_id() {
-        let event = EventEnvelop::new("aggregate-id-1".to_string(), Event1 { value: 3 });
-        assert!(event.has_id("aggregate-id-1".to_string()));
+        let event = EventEnvelop::new("aggregate-id-1", Event1 { value: 3 });
+        assert!(event.has_id("aggregate-id-1"));
     }
 
     #[test]
     fn it_has_no_id() {
-        let event = EventEnvelop::new("aggregate-id-1".to_string(), Event1 { value: 3 });
-        assert!(!event.has_id("no-aggregate-id".to_string()));
+        let event = EventEnvelop::new("aggregate-id-1", Event1 { value: 3 });
+        assert!(!event.has_id("no-aggregate-id"));
     }
 
     #[derive(Debug, PartialEq)]
