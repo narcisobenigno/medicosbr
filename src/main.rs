@@ -1,5 +1,3 @@
-mod common;
-mod domain;
 mod ports;
 
 fn main() {

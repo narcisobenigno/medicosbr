@@ -54,7 +54,7 @@ mod tests {
     use std::error::Error;
 
     #[test]
-    fn it_loads_temporal_series_file() -> Result<(), Box<Error>> {
+    fn it_loads_temporal_series_file() -> Result<(), Box<dyn Error>> {
         let data = r#"
 data de publicação;UF;Unidade da Federação;Tipo;dado;escala;Ano epidemiológico;Semana epidemiológica;Situação do dado;Casos semanais reportados até a última atualização;limite inferior da estimativa;casos estimados;média móvel;limite superior da estimativa;Percentual em relação ao país;População;limiar pré-epidêmico;intensidade alta;intensidade muito alta;nível semanal;nível por média móvel
 2021-01-20;0;Brasil;País;srag;casos;2009;1;Dado estável. Sujeito a pequenas alterações.;0,0;;;;;;193543969;614,0;1588,0000000000002;2056,0;valor baixo;
