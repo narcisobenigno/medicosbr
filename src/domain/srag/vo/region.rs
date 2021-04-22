@@ -1,5 +1,8 @@
 use std::fmt::Debug;
 
+// For more details see [here](https://ibge.gov.br/explica/codigos-dos-municipios.php)
+// and [here](https://gitlab.procc.fiocruz.br/mave/repo/-/tree/master/Dados/InfoGripe#alerta-de-situa%C3%A7%C3%A3o-com-base-no-n%C3%BAmero-de-novos-casos-semanais)
+
 #[derive(Debug, PartialEq)]
 enum Region {
     Acre,
