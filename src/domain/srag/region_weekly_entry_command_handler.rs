@@ -28,7 +28,7 @@ mod tests {
     #[test]
     fn it_uploads_a_new() {
         let handler = RegionWeeklyCommandHandler::new();
-        let result = handler.handle(RegionWeeklyUpload {
+        handler.handle(RegionWeeklyUpload {
             region: vo::Region::Alagoas,
             case: vo::Case::SARS,
             total_reported: vo::TotalReported(10),

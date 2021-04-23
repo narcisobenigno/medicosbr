@@ -1,7 +1,11 @@
+use std::convert::TryFrom;
 use std::fmt::Debug;
 
 // For more details see [here](https://ibge.gov.br/explica/codigos-dos-municipios.php)
 // and [here](https://gitlab.procc.fiocruz.br/mave/repo/-/tree/master/Dados/InfoGripe#alerta-de-situa%C3%A7%C3%A3o-com-base-no-n%C3%BAmero-de-novos-casos-semanais)
+
+#[derive(Debug, PartialEq)]
+pub struct ParseRegionError();
 
 #[derive(Debug, PartialEq)]
 pub enum Region {
@@ -34,85 +38,89 @@ pub enum Region {
     Tocantins,
 }
 
-impl Region {
-    pub(crate) fn parse(code: &u16) -> Option<Region> {
-        match code {
-            12 => Some(Region::Acre),
-            27 => Some(Region::Alagoas),
-            16 => Some(Region::Amapa),
-            13 => Some(Region::Amazonas),
-            29 => Some(Region::Bahia),
-            23 => Some(Region::Ceara),
-            53 => Some(Region::DistritoFederal),
-            32 => Some(Region::EspiritoSanto),
-            52 => Some(Region::Goias),
-            21 => Some(Region::Maranhao),
-            51 => Some(Region::MatoGrosso),
-            50 => Some(Region::MatoGrossoDoSul),
-            31 => Some(Region::MinasGerais),
-            15 => Some(Region::Para),
-            25 => Some(Region::Paraiba),
-            41 => Some(Region::Parana),
-            26 => Some(Region::Pernambuco),
-            22 => Some(Region::Piaui),
-            24 => Some(Region::RioGrandeDoNorte),
-            43 => Some(Region::RioGrandeDoSul),
-            33 => Some(Region::RioDeJaneiro),
-            11 => Some(Region::Rondonia),
-            14 => Some(Region::Roraima),
-            42 => Some(Region::SantaCatarina),
-            35 => Some(Region::SaoPaulo),
-            28 => Some(Region::Sergipe),
-            17 => Some(Region::Tocantins),
-            _ => None,
+impl TryFrom<&u16> for Region {
+    type Error = ParseRegionError;
+
+    fn try_from(value: &u16) -> Result<Self, Self::Error> {
+        match value {
+            12 => Ok(Region::Acre),
+            27 => Ok(Region::Alagoas),
+            16 => Ok(Region::Amapa),
+            13 => Ok(Region::Amazonas),
+            29 => Ok(Region::Bahia),
+            23 => Ok(Region::Ceara),
+            53 => Ok(Region::DistritoFederal),
+            32 => Ok(Region::EspiritoSanto),
+            52 => Ok(Region::Goias),
+            21 => Ok(Region::Maranhao),
+            51 => Ok(Region::MatoGrosso),
+            50 => Ok(Region::MatoGrossoDoSul),
+            31 => Ok(Region::MinasGerais),
+            15 => Ok(Region::Para),
+            25 => Ok(Region::Paraiba),
+            41 => Ok(Region::Parana),
+            26 => Ok(Region::Pernambuco),
+            22 => Ok(Region::Piaui),
+            24 => Ok(Region::RioGrandeDoNorte),
+            43 => Ok(Region::RioGrandeDoSul),
+            33 => Ok(Region::RioDeJaneiro),
+            11 => Ok(Region::Rondonia),
+            14 => Ok(Region::Roraima),
+            42 => Ok(Region::SantaCatarina),
+            35 => Ok(Region::SaoPaulo),
+            28 => Ok(Region::Sergipe),
+            17 => Ok(Region::Tocantins),
+            _ => Err(ParseRegionError()),
         }
     }
 }
 
 #[cfg(test)]
 mod test {
+    use std::convert::TryFrom;
+
+    use super::ParseRegionError;
     use super::Region;
 
     #[test]
     fn it_parse_regions() {
         vec![
-            Test::Case(Some(Region::Acre), 12),
-            Test::Case(Some(Region::Alagoas), 27),
-            Test::Case(Some(Region::Amapa), 16),
-            Test::Case(Some(Region::Amazonas), 13),
-            Test::Case(Some(Region::Bahia), 29),
-            Test::Case(Some(Region::Ceara), 23),
-            Test::Case(Some(Region::DistritoFederal), 53),
-            Test::Case(Some(Region::EspiritoSanto), 32),
-            Test::Case(Some(Region::Goias), 52),
-            Test::Case(Some(Region::Maranhao), 21),
-            Test::Case(Some(Region::MatoGrosso), 51),
-            Test::Case(Some(Region::MatoGrossoDoSul), 50),
-            Test::Case(Some(Region::MinasGerais), 31),
-            Test::Case(Some(Region::Para), 15),
-            Test::Case(Some(Region::Paraiba), 25),
-            Test::Case(Some(Region::Parana), 41),
-            Test::Case(Some(Region::Pernambuco), 26),
-            Test::Case(Some(Region::Piaui), 22),
-            Test::Case(Some(Region::RioGrandeDoNorte), 24),
-            Test::Case(Some(Region::RioGrandeDoSul), 43),
-            Test::Case(Some(Region::RioDeJaneiro), 33),
-            Test::Case(Some(Region::Rondonia), 11),
-            Test::Case(Some(Region::Roraima), 14),
-            Test::Case(Some(Region::SantaCatarina), 42),
-            Test::Case(Some(Region::SaoPaulo), 35),
-            Test::Case(Some(Region::Sergipe), 28),
-            Test::Case(Some(Region::Tocantins), 17),
+            Test::Case(Ok(Region::Acre), 12),
+            Test::Case(Ok(Region::Alagoas), 27),
+            Test::Case(Ok(Region::Amapa), 16),
+            Test::Case(Ok(Region::Amazonas), 13),
+            Test::Case(Ok(Region::Bahia), 29),
+            Test::Case(Ok(Region::Ceara), 23),
+            Test::Case(Ok(Region::DistritoFederal), 53),
+            Test::Case(Ok(Region::EspiritoSanto), 32),
+            Test::Case(Ok(Region::Goias), 52),
+            Test::Case(Ok(Region::Maranhao), 21),
+            Test::Case(Ok(Region::MatoGrosso), 51),
+            Test::Case(Ok(Region::MatoGrossoDoSul), 50),
+            Test::Case(Ok(Region::MinasGerais), 31),
+            Test::Case(Ok(Region::Para), 15),
+            Test::Case(Ok(Region::Paraiba), 25),
+            Test::Case(Ok(Region::Parana), 41),
+            Test::Case(Ok(Region::Pernambuco), 26),
+            Test::Case(Ok(Region::Piaui), 22),
+            Test::Case(Ok(Region::RioGrandeDoNorte), 24),
+            Test::Case(Ok(Region::RioGrandeDoSul), 43),
+            Test::Case(Ok(Region::RioDeJaneiro), 33),
+            Test::Case(Ok(Region::Rondonia), 11),
+            Test::Case(Ok(Region::Roraima), 14),
+            Test::Case(Ok(Region::SantaCatarina), 42),
+            Test::Case(Ok(Region::SaoPaulo), 35),
+            Test::Case(Ok(Region::Sergipe), 28),
+            Test::Case(Ok(Region::Tocantins), 17),
+            Test::Case(Err(ParseRegionError()), 33333),
         ]
         .iter()
         .for_each(move |it| match it {
-            Test::Case(region, code) => assert_eq!(region, &Region::parse(code)),
+            Test::Case(region, code) => assert_eq!(region, &Region::try_from(code)),
         });
-
-        assert_eq!(None, Region::parse(&33333));
     }
 
     enum Test {
-        Case(Option<Region>, u16),
+        Case(Result<Region, ParseRegionError>, u16),
     }
 }
