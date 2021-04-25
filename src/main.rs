@@ -1,3 +1,4 @@
+mod common;
 mod domain;
 mod ports;
 
