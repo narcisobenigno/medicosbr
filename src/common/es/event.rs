@@ -4,6 +4,7 @@ use super::{AggregateId, Version};
 pub struct Event {
     pub(super) aggregate_id: AggregateId,
     pub(super) version: Version,
+    pub(super) position: u64,
 }
 
 impl Event {
@@ -11,6 +12,7 @@ impl Event {
         Event {
             aggregate_id,
             version,
+            position: 0,
         }
     }
 }
@@ -25,15 +27,11 @@ mod test {
     fn it_is_eq_comparable() {
         let namespace = Uuid::new_v4();
 
+        let id = AggregateId::from(Uuid::new_v5(&namespace, "aggregate-1".as_bytes()));
+        let version = Version::from(1);
         assert_eq!(
-            super::Event::new(
-                AggregateId::from(Uuid::new_v5(&namespace, "aggregate-1".as_bytes())),
-                Version::from(1)
-            ),
-            super::Event::new(
-                AggregateId::from(Uuid::new_v5(&namespace, "aggregate-1".as_bytes())),
-                Version::from(1)
-            ),
+            super::Event::new(id.clone(), version.clone()),
+            super::Event::new(id.clone(), version.clone()),
         )
     }
 }

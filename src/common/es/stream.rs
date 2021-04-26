@@ -16,12 +16,14 @@ pub trait Stream {
 
 pub struct InMemoryStream {
     events: HashMap<AggregateId, HashMap<Version, Event>>,
+    current_position: u64,
 }
 
 impl Default for InMemoryStream {
     fn default() -> Self {
         InMemoryStream {
             events: HashMap::new(),
+            current_position: 1,
         }
     }
 }
@@ -47,7 +49,10 @@ impl Stream for InMemoryStream {
             if aggregate_events.contains_key(&event.version) {
                 return Err(Error::OptimistLockViolation);
             }
-            aggregate_events.insert(event.version.clone(), event.clone());
+            let mut inserting_event = event.clone();
+            inserting_event.position = self.current_position;
+            self.current_position += 1;
+            aggregate_events.insert(event.version.clone(), inserting_event);
         }
         Ok(())
     }
@@ -78,11 +83,13 @@ mod test {
             ])
         );
 
+        let mut first = Event::new(AggregateId::from(aggregate_id_1.as_str()), Version::from(1));
+        first.position = 1;
+        let mut third = Event::new(AggregateId::from(aggregate_id_1.as_str()), Version::from(2));
+        third.position = 3;
+
         assert_eq!(
-            vec![
-                &Event::new(AggregateId::from(aggregate_id_1.as_str()), Version::from(1)),
-                &Event::new(AggregateId::from(aggregate_id_1.as_str()), Version::from(2)),
-            ],
+            vec![&first, &third],
             stream.read_by_aggregate_id(&AggregateId::from(aggregate_id_1.as_str()))
         )
     }
