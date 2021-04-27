@@ -9,6 +9,8 @@ edition = "2018"
 [dependencies]
 csv = "1.1"
 
+chrono = "0.4"
+
 cqrs-es = "0.0.18"
 postgres-es = "0.0.18"
 
