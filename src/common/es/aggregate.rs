@@ -1,5 +1,6 @@
 use std::str::FromStr;
 
+use crate::common::es::WrittenEvent;
 use uuid::Uuid;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone)]
@@ -25,5 +26,5 @@ impl From<&str> for AggregateId {
 }
 
 pub trait Aggregate: Default {
-    fn handle(&mut self, event_name: &String, aggregate_id: &AggregateId, payload: &String);
+    fn handle(&mut self, event: &WrittenEvent);
 }

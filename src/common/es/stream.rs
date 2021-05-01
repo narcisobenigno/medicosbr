@@ -64,7 +64,6 @@ impl Stream for InMemoryStream {
 
 #[cfg(test)]
 mod test {
-    use serde::{Deserialize, Serialize};
     use std::time::SystemTime;
 
     use chrono::DateTime;
@@ -72,7 +71,7 @@ mod test {
 
     use crate::common::clock::InMemoryClock;
 
-    use super::super::{Payload, Version, WrittenEvent};
+    use super::super::{TestEvent, Version, WrittenEvent};
     use super::*;
 
     #[test]
@@ -81,38 +80,44 @@ mod test {
         let stream = &mut InMemoryStream::new(InMemoryClock::new(time));
 
         let namespace = Uuid::new_v4();
-        let aggregate_id_1 = Uuid::new_v5(&namespace, "aggregate-1".as_bytes()).to_string();
-        let aggregate_id_2 = Uuid::new_v5(&namespace, "aggregate-2".as_bytes()).to_string();
+        let aggregate_id_1 = AggregateId::from(&Uuid::new_v5(&namespace, "aggregate-1".as_bytes()));
+        let aggregate_id_2 = AggregateId::from(&Uuid::new_v5(&namespace, "aggregate-2".as_bytes()));
 
+        let version1 = Version::from(1);
+        let version2 = Version::from(2);
         assert_eq!(
             Ok(()),
             stream.write(&mut vec![
                 Event::new(
-                    AggregateId::from(aggregate_id_1.as_str()),
-                    Version::from(1),
+                    &aggregate_id_1,
+                    &version1,
                     &TestEvent {
-                        name: "event-1".to_string(),
+                        name: "event-name".to_string(),
+                        content: "event-1".to_string(),
                     },
                 ),
                 Event::new(
-                    AggregateId::from(aggregate_id_2.as_str()),
-                    Version::from(1),
+                    &aggregate_id_2,
+                    &version1,
                     &TestEvent {
-                        name: "event-2".to_string(),
+                        name: "event-name".to_string(),
+                        content: "event-2".to_string(),
                     },
                 ),
                 Event::new(
-                    AggregateId::from(aggregate_id_1.as_str()),
-                    Version::from(2),
+                    &aggregate_id_1,
+                    &version2,
                     &TestEvent {
-                        name: "event-3".to_string(),
+                        name: "event-name".to_string(),
+                        content: "event-3".to_string(),
                     },
                 ),
                 Event::new(
-                    AggregateId::from(aggregate_id_2.as_str()),
-                    Version::from(2),
+                    &aggregate_id_2,
+                    &version2,
                     &TestEvent {
-                        name: "event-4".to_string(),
+                        name: "event-name".to_string(),
+                        content: "event-4".to_string(),
                     },
                 ),
             ])
@@ -122,10 +127,11 @@ mod test {
             vec![
                 &WrittenEvent::new(
                     &Event::new(
-                        AggregateId::from(aggregate_id_1.as_str()),
-                        Version::from(1),
+                        &aggregate_id_1,
+                        &version1,
                         &TestEvent {
-                            name: "event-1".to_string(),
+                            name: "event-name".to_string(),
+                            content: "event-1".to_string(),
                         },
                     ),
                     SystemTime::from(DateTime::parse_from_rfc3339("2021-01-01T01:01:00Z").unwrap()),
@@ -133,17 +139,18 @@ mod test {
                 ),
                 &WrittenEvent::new(
                     &Event::new(
-                        AggregateId::from(aggregate_id_1.as_str()),
-                        Version::from(2),
+                        &aggregate_id_1,
+                        &version2,
                         &TestEvent {
-                            name: "event-3".to_string(),
+                            name: "event-name".to_string(),
+                            content: "event-3".to_string(),
                         },
                     ),
                     SystemTime::from(DateTime::parse_from_rfc3339("2021-01-01T01:01:02Z").unwrap()),
                     3,
                 )
             ],
-            stream.read_by_aggregate_id(&AggregateId::from(aggregate_id_1.as_str()))
+            stream.read_by_aggregate_id(&aggregate_id_1)
         )
     }
 
@@ -152,16 +159,18 @@ mod test {
         let time = SystemTime::from(DateTime::parse_from_rfc3339("2021-01-01T01:01:00Z").unwrap());
         let stream = &mut InMemoryStream::new(InMemoryClock::new(time));
 
-        let namespace = Uuid::new_v4();
-        let aggregate_id_1 = Uuid::new_v5(&namespace, "aggregate-1".as_bytes()).to_string();
+        let aggregate_id_1 =
+            AggregateId::from(&Uuid::new_v5(&Uuid::new_v4(), "aggregate-1".as_bytes()));
 
+        let version1 = Version::from(1);
         assert_eq!(
             Ok(()),
             stream.write(&mut vec![Event::new(
-                AggregateId::from(aggregate_id_1.as_str()),
-                Version::from(1),
+                &aggregate_id_1,
+                &version1,
                 &TestEvent {
-                    name: "event-1".to_string(),
+                    name: "event-name".to_string(),
+                    content: "event-1".to_string(),
                 },
             )])
         );
@@ -169,27 +178,13 @@ mod test {
         assert_eq!(
             Err(Error::OptimistLockViolation),
             stream.write(&mut vec![Event::new(
-                AggregateId::from(aggregate_id_1.as_str()),
-                Version::from(1),
+                &aggregate_id_1,
+                &version1,
                 &TestEvent {
-                    name: "event-1".to_string(),
+                    name: "event-name".to_string(),
+                    content: "event-1".to_string(),
                 },
             )])
         );
-    }
-
-    #[derive(Debug, Clone, Serialize, Deserialize)]
-    struct TestEvent {
-        name: String,
-    }
-
-    impl Payload for TestEvent {
-        fn name(&self) -> String {
-            "TestEvent".to_string()
-        }
-
-        fn marshal_json(&self) -> String {
-            serde_json::to_string(self).unwrap()
-        }
     }
 }

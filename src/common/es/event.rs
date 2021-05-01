@@ -1,11 +1,16 @@
-use super::{AggregateId, Version};
-use serde::Serialize;
 use std::fmt::Debug;
 use std::time::SystemTime;
 
-pub trait Payload: Debug {
+use serde::Serialize;
+
+use super::{AggregateId, Version};
+
+pub trait Payload: Debug + Sized {
+    type UnmarshalErr;
+
     fn name(&self) -> String;
     fn marshal_json(&self) -> String;
+    fn unmarshal_json(payload: &str) -> Result<Self, Self::UnmarshalErr>;
 }
 
 #[derive(Debug, PartialEq)]
@@ -18,13 +23,13 @@ pub struct Event {
 
 impl Event {
     pub fn new<T: Payload + Serialize>(
-        aggregate_id: AggregateId,
-        version: Version,
+        aggregate_id: &AggregateId,
+        version: &Version,
         payload: &T,
     ) -> Self {
         Event {
-            aggregate_id,
-            version,
+            aggregate_id: aggregate_id.clone(),
+            version: version.clone(),
             name: payload.name().to_string(),
             payload: payload.marshal_json(),
         }
@@ -59,44 +64,32 @@ mod test {
     use uuid::Uuid;
 
     use super::super::{AggregateId, Version};
-    use super::{Event, Payload};
-    use serde::{Deserialize, Serialize};
+    use super::Event;
+    use crate::common::es::test_support::TestEvent;
 
     #[test]
     fn it_is_eq_comparable() {
         let namespace = Uuid::new_v4();
 
         let id = AggregateId::from(&Uuid::new_v5(&namespace, "aggregate-1".as_bytes()));
+        let version1 = Version::from(1);
         assert_eq!(
             Event::new(
-                id.clone(),
-                Version::from(1),
+                &id,
+                &version1,
                 &TestEvent {
-                    name: "event-1".to_string()
+                    name: "event-name".to_string(),
+                    content: "event-1".to_string()
                 }
             ),
             Event::new(
-                id.clone(),
-                Version::from(1),
+                &id,
+                &version1,
                 &TestEvent {
-                    name: "event-1".to_string()
+                    name: "event-name".to_string(),
+                    content: "event-1".to_string()
                 }
             ),
         )
-    }
-
-    #[derive(Debug, Clone, Serialize, Deserialize)]
-    struct TestEvent {
-        name: String,
-    }
-
-    impl Payload for TestEvent {
-        fn name(&self) -> String {
-            "TestEvent".to_string()
-        }
-
-        fn marshal_json(&self) -> String {
-            serde_json::to_string(self).unwrap()
-        }
     }
 }
