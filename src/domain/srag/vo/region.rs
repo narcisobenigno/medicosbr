@@ -1,3 +1,4 @@
+use serde::{Deserialize, Serialize};
 use std::convert::TryFrom;
 use std::fmt::Debug;
 
@@ -7,7 +8,7 @@ use std::fmt::Debug;
 #[derive(Debug, PartialEq)]
 pub struct ParseRegionError();
 
-#[derive(Debug, PartialEq)]
+#[derive(Debug, PartialEq, Serialize, Deserialize)]
 pub enum Region {
     Acre,
     Alagoas,
@@ -38,10 +39,10 @@ pub enum Region {
     Tocantins,
 }
 
-impl TryFrom<&u16> for Region {
+impl TryFrom<u16> for Region {
     type Error = ParseRegionError;
 
-    fn try_from(value: &u16) -> Result<Self, Self::Error> {
+    fn try_from(value: u16) -> Result<Self, Self::Error> {
         match value {
             12 => Ok(Region::Acre),
             27 => Ok(Region::Alagoas),
@@ -75,6 +76,40 @@ impl TryFrom<&u16> for Region {
     }
 }
 
+impl Region {
+    pub fn name(&self) -> &str {
+        match self {
+            Region::Acre => "Acre",
+            Region::Alagoas => "Alagoas",
+            Region::Amapa => "Amapa",
+            Region::Amazonas => "Amazonas",
+            Region::Bahia => "Bahia",
+            Region::Ceara => "Ceara",
+            Region::DistritoFederal => "DistritoFederal",
+            Region::EspiritoSanto => "EspiritoSanto",
+            Region::Goias => "Goias",
+            Region::Maranhao => "Maranhao",
+            Region::MatoGrosso => "MatoGrosso",
+            Region::MatoGrossoDoSul => "MatoGrossoDoSul",
+            Region::MinasGerais => "MinasGerais",
+            Region::Para => "Para",
+            Region::Paraiba => "Paraiba",
+            Region::Parana => "Parana",
+            Region::Pernambuco => "Pernambuco",
+            Region::Piaui => "Piaui",
+            Region::RioGrandeDoNorte => "RioGrandeDoNorte",
+            Region::RioGrandeDoSul => "RioGrandeDoSul",
+            Region::RioDeJaneiro => "RioDeJaneiro",
+            Region::Rondonia => "Rondonia",
+            Region::Roraima => "Roraima",
+            Region::SantaCatarina => "SantaCatarina",
+            Region::SaoPaulo => "SaoPaulo",
+            Region::Sergipe => "Sergipe",
+            Region::Tocantins => "Tocantins",
+        }
+    }
+}
+
 #[cfg(test)]
 mod test {
     use std::convert::TryFrom;
@@ -85,42 +120,247 @@ mod test {
     #[test]
     fn it_parse_regions() {
         vec![
-            Test::Case(Ok(Region::Acre), 12),
-            Test::Case(Ok(Region::Alagoas), 27),
-            Test::Case(Ok(Region::Amapa), 16),
-            Test::Case(Ok(Region::Amazonas), 13),
-            Test::Case(Ok(Region::Bahia), 29),
-            Test::Case(Ok(Region::Ceara), 23),
-            Test::Case(Ok(Region::DistritoFederal), 53),
-            Test::Case(Ok(Region::EspiritoSanto), 32),
-            Test::Case(Ok(Region::Goias), 52),
-            Test::Case(Ok(Region::Maranhao), 21),
-            Test::Case(Ok(Region::MatoGrosso), 51),
-            Test::Case(Ok(Region::MatoGrossoDoSul), 50),
-            Test::Case(Ok(Region::MinasGerais), 31),
-            Test::Case(Ok(Region::Para), 15),
-            Test::Case(Ok(Region::Paraiba), 25),
-            Test::Case(Ok(Region::Parana), 41),
-            Test::Case(Ok(Region::Pernambuco), 26),
-            Test::Case(Ok(Region::Piaui), 22),
-            Test::Case(Ok(Region::RioGrandeDoNorte), 24),
-            Test::Case(Ok(Region::RioGrandeDoSul), 43),
-            Test::Case(Ok(Region::RioDeJaneiro), 33),
-            Test::Case(Ok(Region::Rondonia), 11),
-            Test::Case(Ok(Region::Roraima), 14),
-            Test::Case(Ok(Region::SantaCatarina), 42),
-            Test::Case(Ok(Region::SaoPaulo), 35),
-            Test::Case(Ok(Region::Sergipe), 28),
-            Test::Case(Ok(Region::Tocantins), 17),
-            Test::Case(Err(ParseRegionError()), 33333),
+            ParseCase {
+                expected: Ok(Region::Acre),
+                region_code: 12,
+            },
+            ParseCase {
+                expected: Ok(Region::Alagoas),
+                region_code: 27,
+            },
+            ParseCase {
+                expected: Ok(Region::Amapa),
+                region_code: 16,
+            },
+            ParseCase {
+                expected: Ok(Region::Amazonas),
+                region_code: 13,
+            },
+            ParseCase {
+                expected: Ok(Region::Bahia),
+                region_code: 29,
+            },
+            ParseCase {
+                expected: Ok(Region::Ceara),
+                region_code: 23,
+            },
+            ParseCase {
+                expected: Ok(Region::DistritoFederal),
+                region_code: 53,
+            },
+            ParseCase {
+                expected: Ok(Region::EspiritoSanto),
+                region_code: 32,
+            },
+            ParseCase {
+                expected: Ok(Region::Goias),
+                region_code: 52,
+            },
+            ParseCase {
+                expected: Ok(Region::Maranhao),
+                region_code: 21,
+            },
+            ParseCase {
+                expected: Ok(Region::MatoGrosso),
+                region_code: 51,
+            },
+            ParseCase {
+                expected: Ok(Region::MatoGrossoDoSul),
+                region_code: 50,
+            },
+            ParseCase {
+                expected: Ok(Region::MinasGerais),
+                region_code: 31,
+            },
+            ParseCase {
+                expected: Ok(Region::Para),
+                region_code: 15,
+            },
+            ParseCase {
+                expected: Ok(Region::Paraiba),
+                region_code: 25,
+            },
+            ParseCase {
+                expected: Ok(Region::Parana),
+                region_code: 41,
+            },
+            ParseCase {
+                expected: Ok(Region::Pernambuco),
+                region_code: 26,
+            },
+            ParseCase {
+                expected: Ok(Region::Piaui),
+                region_code: 22,
+            },
+            ParseCase {
+                expected: Ok(Region::RioGrandeDoNorte),
+                region_code: 24,
+            },
+            ParseCase {
+                expected: Ok(Region::RioGrandeDoSul),
+                region_code: 43,
+            },
+            ParseCase {
+                expected: Ok(Region::RioDeJaneiro),
+                region_code: 33,
+            },
+            ParseCase {
+                expected: Ok(Region::Rondonia),
+                region_code: 11,
+            },
+            ParseCase {
+                expected: Ok(Region::Roraima),
+                region_code: 14,
+            },
+            ParseCase {
+                expected: Ok(Region::SantaCatarina),
+                region_code: 42,
+            },
+            ParseCase {
+                expected: Ok(Region::SaoPaulo),
+                region_code: 35,
+            },
+            ParseCase {
+                expected: Ok(Region::Sergipe),
+                region_code: 28,
+            },
+            ParseCase {
+                expected: Ok(Region::Tocantins),
+                region_code: 17,
+            },
+            ParseCase {
+                expected: Err(ParseRegionError()),
+                region_code: 33333,
+            },
         ]
         .iter()
-        .for_each(move |it| match it {
-            Test::Case(region, code) => assert_eq!(region, &Region::try_from(code)),
+        .for_each(move |case| {
+            assert_eq!(case.expected, Region::try_from(case.region_code.clone()))
         });
     }
 
-    enum Test {
-        Case(Result<Region, ParseRegionError>, u16),
+    #[test]
+    fn it_returns_name() {
+        vec![
+            NameCase {
+                expected: "Acre".to_string(),
+                region: Region::Acre,
+            },
+            NameCase {
+                expected: "Alagoas".to_string(),
+                region: Region::Alagoas,
+            },
+            NameCase {
+                expected: "Amapa".to_string(),
+                region: Region::Amapa,
+            },
+            NameCase {
+                expected: "Amazonas".to_string(),
+                region: Region::Amazonas,
+            },
+            NameCase {
+                expected: "Bahia".to_string(),
+                region: Region::Bahia,
+            },
+            NameCase {
+                expected: "Ceara".to_string(),
+                region: Region::Ceara,
+            },
+            NameCase {
+                expected: "DistritoFederal".to_string(),
+                region: Region::DistritoFederal,
+            },
+            NameCase {
+                expected: "EspiritoSanto".to_string(),
+                region: Region::EspiritoSanto,
+            },
+            NameCase {
+                expected: "Goias".to_string(),
+                region: Region::Goias,
+            },
+            NameCase {
+                expected: "Maranhao".to_string(),
+                region: Region::Maranhao,
+            },
+            NameCase {
+                expected: "MatoGrosso".to_string(),
+                region: Region::MatoGrosso,
+            },
+            NameCase {
+                expected: "MatoGrossoDoSul".to_string(),
+                region: Region::MatoGrossoDoSul,
+            },
+            NameCase {
+                expected: "MinasGerais".to_string(),
+                region: Region::MinasGerais,
+            },
+            NameCase {
+                expected: "Para".to_string(),
+                region: Region::Para,
+            },
+            NameCase {
+                expected: "Paraiba".to_string(),
+                region: Region::Paraiba,
+            },
+            NameCase {
+                expected: "Parana".to_string(),
+                region: Region::Parana,
+            },
+            NameCase {
+                expected: "Pernambuco".to_string(),
+                region: Region::Pernambuco,
+            },
+            NameCase {
+                expected: "Piaui".to_string(),
+                region: Region::Piaui,
+            },
+            NameCase {
+                expected: "RioGrandeDoNorte".to_string(),
+                region: Region::RioGrandeDoNorte,
+            },
+            NameCase {
+                expected: "RioGrandeDoSul".to_string(),
+                region: Region::RioGrandeDoSul,
+            },
+            NameCase {
+                expected: "RioDeJaneiro".to_string(),
+                region: Region::RioDeJaneiro,
+            },
+            NameCase {
+                expected: "Rondonia".to_string(),
+                region: Region::Rondonia,
+            },
+            NameCase {
+                expected: "Roraima".to_string(),
+                region: Region::Roraima,
+            },
+            NameCase {
+                expected: "SantaCatarina".to_string(),
+                region: Region::SantaCatarina,
+            },
+            NameCase {
+                expected: "SaoPaulo".to_string(),
+                region: Region::SaoPaulo,
+            },
+            NameCase {
+                expected: "Sergipe".to_string(),
+                region: Region::Sergipe,
+            },
+            NameCase {
+                expected: "Tocantins".to_string(),
+                region: Region::Tocantins,
+            },
+        ]
+        .iter()
+        .for_each(move |case| assert_eq!(case.expected, case.region.name()));
+    }
+
+    struct ParseCase {
+        expected: Result<Region, ParseRegionError>,
+        region_code: u16,
+    }
+    struct NameCase {
+        expected: String,
+        region: Region,
     }
 }

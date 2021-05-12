@@ -1,2 +1,2 @@
-mod clock;
-mod es;
+pub mod clock;
+pub mod es;

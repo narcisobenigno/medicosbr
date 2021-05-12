@@ -21,7 +21,7 @@ pub struct InMemoryStream {
 
 impl InMemoryStream {
     pub fn new(clock: InMemoryClock) -> Self {
-        InMemoryStream {
+        Self {
             events: HashMap::new(),
             current_position: 1,
             clock,

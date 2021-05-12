@@ -1,10 +1,14 @@
 use super::{Aggregate, AggregateId, Event, Stream, Version};
 
-struct AggregateStore {
-    stream: Box<dyn Stream>,
+pub struct AggregateStore<'a> {
+    stream: &'a mut (dyn Stream + 'a),
 }
 
-impl AggregateStore {
+impl<'a> AggregateStore<'a> {
+    pub fn new(stream: &'a mut (dyn Stream + 'a)) -> AggregateStore<'a> {
+        AggregateStore { stream }
+    }
+
     pub fn load<T: Aggregate>(&self, id: &AggregateId) -> T {
         let mut t = T::default();
         for x in self.stream.read_by_aggregate_id(id) {
@@ -12,11 +16,9 @@ impl AggregateStore {
         }
         t
     }
-}
 
-impl AggregateStore {
-    pub fn new(stream: Box<dyn Stream>) -> AggregateStore {
-        AggregateStore { stream }
+    pub fn write(&mut self, events: &mut Vec<Event>) {
+        self.stream.write(events);
     }
 }
 
@@ -79,16 +81,14 @@ mod test {
             ]),
         );
 
-        let store = AggregateStore::new(Box::new(stream));
-        let aggregate: MyAggregate = store.load(&aggregate_id_1);
+        let store = AggregateStore::new(&mut stream);
+        let aggregate: &mut MyAggregate = &mut store.load(&aggregate_id_1);
 
-        assert_eq!(
-            &MyAggregate {
-                ids: vec![aggregate_id_1.clone(), aggregate_id_1.clone()],
-                values: vec!["event-1".to_string(), "event-3".to_string()]
-            },
-            &aggregate,
-        )
+        let x = &mut MyAggregate {
+            ids: vec![aggregate_id_1.clone(), aggregate_id_1.clone()],
+            values: vec!["event-1".to_string(), "event-3".to_string()],
+        };
+        assert_eq!(&x, &aggregate,)
     }
 
     #[derive(Debug, PartialEq)]
