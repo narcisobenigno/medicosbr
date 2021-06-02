@@ -1,5 +1,6 @@
 use super::vo;
 use super::vo::{Case, Region, TotalReported, YearWeek};
+use crate::common;
 use crate::common::es;
 use crate::common::es::AggregateId;
 use crate::domain::RegionalWeeklyReport;
@@ -38,7 +39,7 @@ impl<'a> RegionWeeklyCommandHandler<'a> {
         RegionWeeklyCommandHandler { aggregate_store }
     }
 
-    pub(crate) fn handle(&mut self, command: RegionWeeklyUpload) {
+    pub(crate) fn handle(&mut self, command: RegionWeeklyUpload) -> Result<(), common::Error> {
         let aggregate_id = es::AggregateId::from(&Uuid::new_v5(
             &Uuid::from_str("a385bf4a-e6c0-48ee-a5e0-701e92f1e592").unwrap(),
             format!("{}{}", command.region.name(), vo::YearWeek(2019, 10)).as_bytes(),
@@ -47,8 +48,13 @@ impl<'a> RegionWeeklyCommandHandler<'a> {
         let aggregate = self
             .aggregate_store
             .load::<RegionalWeeklyReport>(&aggregate_id);
-        let mut events = aggregate.upload(command);
-        self.aggregate_store.write(&mut events);
+        match aggregate.upload(command) {
+            Ok(mut events) => self
+                .aggregate_store
+                .write(&mut events)
+                .or_else(|err| Err(common::Error::new(err.to_string().as_str()))),
+            Err(err) => Err(common::Error::new(err.to_string().as_str())),
+        }
     }
 }
 
@@ -85,14 +91,14 @@ mod tests {
         ));
 
         let mut handler = RegionWeeklyCommandHandler::new(&mut aggregate_store);
-        handler.handle(RegionWeeklyUpload {
+        let result = handler.handle(RegionWeeklyUpload {
             aggregate_id: aggregate_id.clone(),
             region: vo::Region::Alagoas,
             case: vo::Case::SARS,
             total_reported: vo::TotalReported(10),
             year_week: vo::YearWeek(2019, 10),
         });
-
+        assert_eq!(Ok(()), result);
         assert_eq!(
             vec![&es::WrittenEvent::new(
                 &es::Event::new(

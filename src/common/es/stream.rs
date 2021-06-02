@@ -1,11 +1,19 @@
 use std::collections::HashMap;
+use std::fmt;
+
+use crate::common::clock::{Clock, InMemoryClock};
 
 use super::{AggregateId, Event, Version, WrittenEvent};
-use crate::common::clock::{Clock, InMemoryClock};
 
 #[derive(Debug, PartialEq)]
 pub enum Error {
     OptimistLockViolation,
+}
+
+impl fmt::Display for Error {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
 }
 
 pub trait Stream {
@@ -69,7 +77,7 @@ mod test {
     use chrono::DateTime;
     use uuid::Uuid;
 
-    use crate::common::clock::InMemoryClock;
+    use crate::common::clock;
 
     use super::super::{TestEvent, Version, WrittenEvent};
     use super::*;
@@ -77,7 +85,7 @@ mod test {
     #[test]
     fn it_loads_events_by_aggregate_id() {
         let time = SystemTime::from(DateTime::parse_from_rfc3339("2021-01-01T01:01:00Z").unwrap());
-        let stream = &mut InMemoryStream::new(InMemoryClock::new(time));
+        let stream = &mut InMemoryStream::new(clock::InMemoryClock::new(time));
 
         let namespace = Uuid::new_v4();
         let aggregate_id_1 = AggregateId::from(&Uuid::new_v5(&namespace, "aggregate-1".as_bytes()));
