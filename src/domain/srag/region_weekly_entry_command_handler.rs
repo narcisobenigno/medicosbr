@@ -69,21 +69,12 @@ pub struct RegionWeeklyUpload {
     pub year_week: vo::YearWeek,
 }
 
-impl RegionWeeklyUpload {
-    pub fn new_id(region: vo::Region, year_week: vo::YearWeek) -> es::AggregateId {
-        es::AggregateId::from(&Uuid::new_v5(
-            &Uuid::from_str("a385bf4a-e6c0-48ee-a5e0-701e92f1e592").unwrap(),
-            format!("{}{}", region.name(), year_week).as_bytes(),
-        ))
-    }
-}
-
 #[cfg(test)]
 mod tests {
-    use super::*;
-    use crate::common::clock::InMemoryClock;
+    use crate::common::clock;
     use crate::common::es;
     use crate::common::es::Stream;
+    use crate::domain;
     use crate::domain::srag::vo;
     use chrono::DateTime;
     use std::time::SystemTime;
@@ -91,13 +82,14 @@ mod tests {
     #[test]
     fn it_uploads_a_new() {
         let time = SystemTime::from(DateTime::parse_from_rfc3339("2021-01-01T01:01:00Z").unwrap());
-        let clock = InMemoryClock::new(time);
+        let clock = clock::InMemoryClock::new(time);
         let mut stream = es::InMemoryStream::new(clock);
         let mut aggregate_store = es::AggregateStore::new(&mut stream);
-        let mut handler = RegionWeeklyCommandHandler::new(&mut aggregate_store);
+        let mut handler = super::RegionWeeklyCommandHandler::new(&mut aggregate_store);
 
-        let aggregate_id = RegionWeeklyUpload::new_id(vo::Region::Alagoas, vo::YearWeek(2019, 10));
-        let result = handler.handle(RegionWeeklyUpload {
+        let aggregate_id =
+            domain::RegionalWeeklyReport::new_id(vo::Region::Alagoas, vo::YearWeek(2019, 10));
+        let result = handler.handle(super::RegionWeeklyUpload {
             aggregate_id: aggregate_id.clone(),
             region: vo::Region::Alagoas,
             case: vo::Case::SARS,
@@ -110,7 +102,7 @@ mod tests {
                 &es::Event::new(
                     &aggregate_id,
                     &es::Version::from(1),
-                    &RegionWeeklyEventDetected(
+                    &domain::RegionWeeklyEventDetected(
                         vo::Region::Alagoas,
                         vo::Case::SARS,
                         vo::TotalReported(10),
