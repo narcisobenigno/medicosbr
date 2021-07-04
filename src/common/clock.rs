@@ -2,7 +2,7 @@ use std::ops::Add;
 use std::time::{Duration, SystemTime};
 
 pub trait Clock {
-    fn now(&self) -> SystemTime;
+    fn now(&mut self) -> SystemTime;
 }
 
 pub struct InMemoryClock {
@@ -20,7 +20,9 @@ impl InMemoryClock {
 }
 
 impl Clock for InMemoryClock {
-    fn now(&self) -> SystemTime {
-        self.now
+    fn now(&mut self) -> SystemTime {
+        let now = self.now;
+        self.tick();
+        now
     }
 }

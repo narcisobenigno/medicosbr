@@ -4,6 +4,7 @@ use std::time::SystemTime;
 use serde::Serialize;
 
 use super::{AggregateId, Version};
+use crate::common::es::VersionedEvent;
 
 pub trait Payload: Debug + Sized {
     type UnmarshalErr;
@@ -16,20 +17,14 @@ pub trait Payload: Debug + Sized {
 #[derive(Debug, PartialEq)]
 pub struct Event {
     pub(super) aggregate_id: AggregateId,
-    pub(super) version: Version,
     pub(super) name: String,
     pub(super) payload: String,
 }
 
 impl Event {
-    pub fn new<T: Payload + Serialize>(
-        aggregate_id: &AggregateId,
-        version: &Version,
-        payload: &T,
-    ) -> Self {
+    pub fn new<T: Payload + Serialize>(aggregate_id: &AggregateId, payload: &T) -> Self {
         Event {
             aggregate_id: aggregate_id.clone(),
-            version: version.clone(),
             name: payload.name().to_string(),
             payload: payload.marshal_json(),
         }
@@ -38,16 +33,16 @@ impl Event {
 
 #[derive(Debug, PartialEq, Clone)]
 pub struct WrittenEvent {
-    pub(super) aggregate_id: AggregateId,
-    pub(super) version: Version,
-    pub(super) name: String,
-    pub(super) payload: String,
+    pub aggregate_id: AggregateId,
+    pub version: Version,
+    pub name: String,
+    pub payload: String,
     recorded_at: SystemTime,
     position: u64,
 }
 
 impl WrittenEvent {
-    pub fn new(event: &Event, recorded_at: SystemTime, position: u64) -> WrittenEvent {
+    pub fn new(event: &VersionedEvent, recorded_at: SystemTime, position: u64) -> WrittenEvent {
         WrittenEvent {
             aggregate_id: event.aggregate_id.clone(),
             version: event.version.clone(),
@@ -63,8 +58,7 @@ impl WrittenEvent {
 mod test {
     use uuid::Uuid;
 
-    use super::super::{AggregateId, Version};
-    use super::Event;
+    use super::{AggregateId, Event};
     use crate::common::es::test_support::TestEvent;
 
     #[test]
@@ -72,11 +66,9 @@ mod test {
         let namespace = Uuid::new_v4();
 
         let id = AggregateId::from(&Uuid::new_v5(&namespace, "aggregate-1".as_bytes()));
-        let version1 = Version::from(1);
         assert_eq!(
             Event::new(
                 &id,
-                &version1,
                 &TestEvent {
                     name: "event-name".to_string(),
                     content: "event-1".to_string()
@@ -84,7 +76,6 @@ mod test {
             ),
             Event::new(
                 &id,
-                &version1,
                 &TestEvent {
                     name: "event-name".to_string(),
                     content: "event-1".to_string()

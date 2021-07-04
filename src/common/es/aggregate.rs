@@ -3,9 +3,15 @@ use std::str::FromStr;
 use crate::common::es::WrittenEvent;
 use uuid::Uuid;
 
-#[derive(Debug, PartialEq, Eq, Hash, Clone)]
+#[derive(Debug, PartialEq, Eq, Hash, Clone, Default)]
 pub struct AggregateId {
     value: Uuid,
+}
+
+impl AggregateId {
+    pub fn is_nil(&self) -> bool {
+        self.value == Uuid::nil()
+    }
 }
 
 impl From<&Uuid> for AggregateId {

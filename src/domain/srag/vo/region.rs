@@ -8,7 +8,7 @@ use std::fmt::Debug;
 #[derive(Debug, PartialEq)]
 pub struct ParseRegionError();
 
-#[derive(Debug, PartialEq, Serialize, Deserialize)]
+#[derive(Debug, PartialEq, Serialize, Deserialize, Clone)]
 pub enum Region {
     Acre,
     Alagoas,

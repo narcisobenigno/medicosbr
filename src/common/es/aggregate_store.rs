@@ -1,4 +1,5 @@
 use crate::common::es;
+use crate::common::es::VersionedEvents;
 
 pub struct AggregateStore<'a> {
     stream: &'a mut (dyn es::Stream + 'a),
@@ -17,7 +18,7 @@ impl<'a> AggregateStore<'a> {
         t
     }
 
-    pub fn write(&mut self, events: &mut Vec<es::Event>) -> Result<(), es::Error> {
+    pub fn write(&mut self, events: &mut VersionedEvents) -> Result<(), es::Error> {
         self.stream.write(events)
     }
 }
@@ -28,6 +29,7 @@ mod test {
     use crate::common::es;
     use crate::common::es::stream::Stream;
     use crate::common::es::test_support::TestEvent;
+    use crate::common::es::{Version, VersionedEvents};
     use chrono::DateTime;
     use std::time::SystemTime;
     use uuid::Uuid;
@@ -43,45 +45,42 @@ mod test {
             es::AggregateId::from(&Uuid::new_v5(&namespace, "aggregate-1".as_bytes()));
         let aggregate_id_2 =
             es::AggregateId::from(&Uuid::new_v5(&namespace, "aggregate-2".as_bytes()));
-        let version1 = es::Version::from(1);
-        let version2 = es::Version::from(2);
 
         assert_eq!(
             Ok(()),
-            stream.write(&mut vec![
-                es::Event::new(
-                    &aggregate_id_1,
-                    &version1,
-                    &TestEvent {
-                        name: "event-name".to_string(),
-                        content: "event-1".to_string(),
-                    },
-                ),
-                es::Event::new(
-                    &aggregate_id_2,
-                    &version1,
-                    &TestEvent {
-                        name: "event-name".to_string(),
-                        content: "event-2".to_string(),
-                    },
-                ),
-                es::Event::new(
-                    &aggregate_id_1,
-                    &version2,
-                    &TestEvent {
-                        name: "event-name".to_string(),
-                        content: "event-3".to_string(),
-                    },
-                ),
-                es::Event::new(
-                    &aggregate_id_2,
-                    &version2,
-                    &TestEvent {
-                        name: "event-name".to_string(),
-                        content: "event-4".to_string(),
-                    },
-                ),
-            ]),
+            stream.write(&mut VersionedEvents::new(
+                Version::from(1),
+                vec![
+                    es::Event::new(
+                        &aggregate_id_1,
+                        &TestEvent {
+                            name: "event-name".to_string(),
+                            content: "event-1".to_string(),
+                        },
+                    ),
+                    es::Event::new(
+                        &aggregate_id_2,
+                        &TestEvent {
+                            name: "event-name".to_string(),
+                            content: "event-2".to_string(),
+                        },
+                    ),
+                    es::Event::new(
+                        &aggregate_id_1,
+                        &TestEvent {
+                            name: "event-name".to_string(),
+                            content: "event-3".to_string(),
+                        },
+                    ),
+                    es::Event::new(
+                        &aggregate_id_2,
+                        &TestEvent {
+                            name: "event-name".to_string(),
+                            content: "event-4".to_string(),
+                        },
+                    ),
+                ]
+            )),
         );
 
         let store = es::AggregateStore::new(&mut stream);

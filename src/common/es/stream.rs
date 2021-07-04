@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::fmt;
 
 use crate::common::clock::{Clock, InMemoryClock};
+use crate::common::es::VersionedEvents;
 
 use super::{AggregateId, Event, Version, WrittenEvent};
 
@@ -18,7 +19,7 @@ impl fmt::Display for Error {
 
 pub trait Stream {
     fn read_by_aggregate_id(&self, aggregate_id: &AggregateId) -> Vec<&WrittenEvent>;
-    fn write(&mut self, events: &mut Vec<Event>) -> Result<(), Error>;
+    fn write(&mut self, events: &mut VersionedEvents) -> Result<(), Error>;
 }
 
 pub struct InMemoryStream {
@@ -49,8 +50,8 @@ impl Stream for InMemoryStream {
         events
     }
 
-    fn write(&mut self, events: &mut Vec<Event>) -> Result<(), Error> {
-        for event in events.iter() {
+    fn write(&mut self, events: &mut VersionedEvents) -> Result<(), Error> {
+        for event in events.into_iter() {
             let aggregate_events = self
                 .events
                 .entry(event.aggregate_id.clone())
@@ -61,7 +62,7 @@ impl Stream for InMemoryStream {
 
             aggregate_events.insert(
                 event.version.clone(),
-                WrittenEvent::new(event, self.clock.now(), self.current_position),
+                WrittenEvent::new(&event, self.clock.now(), self.current_position),
             );
             self.clock.tick();
             self.current_position += 1;
@@ -78,6 +79,7 @@ mod test {
     use uuid::Uuid;
 
     use crate::common::clock;
+    use crate::common::es::{Payload, VersionedEvent};
 
     use super::super::{TestEvent, Version, WrittenEvent};
     use super::*;
@@ -91,70 +93,71 @@ mod test {
         let aggregate_id_1 = AggregateId::from(&Uuid::new_v5(&namespace, "aggregate-1".as_bytes()));
         let aggregate_id_2 = AggregateId::from(&Uuid::new_v5(&namespace, "aggregate-2".as_bytes()));
 
-        let version1 = Version::from(1);
-        let version2 = Version::from(2);
         assert_eq!(
             Ok(()),
-            stream.write(&mut vec![
-                Event::new(
-                    &aggregate_id_1,
-                    &version1,
-                    &TestEvent {
-                        name: "event-name".to_string(),
-                        content: "event-1".to_string(),
-                    },
-                ),
-                Event::new(
-                    &aggregate_id_2,
-                    &version1,
-                    &TestEvent {
-                        name: "event-name".to_string(),
-                        content: "event-2".to_string(),
-                    },
-                ),
-                Event::new(
-                    &aggregate_id_1,
-                    &version2,
-                    &TestEvent {
-                        name: "event-name".to_string(),
-                        content: "event-3".to_string(),
-                    },
-                ),
-                Event::new(
-                    &aggregate_id_2,
-                    &version2,
-                    &TestEvent {
-                        name: "event-name".to_string(),
-                        content: "event-4".to_string(),
-                    },
-                ),
-            ])
-        );
-
-        assert_eq!(
-            vec![
-                &WrittenEvent::new(
-                    &Event::new(
+            stream.write(&mut VersionedEvents::new(
+                Version::from(1),
+                vec![
+                    Event::new(
                         &aggregate_id_1,
-                        &version1,
                         &TestEvent {
                             name: "event-name".to_string(),
                             content: "event-1".to_string(),
                         },
                     ),
-                    SystemTime::from(DateTime::parse_from_rfc3339("2021-01-01T01:01:00Z").unwrap()),
-                    1,
-                ),
-                &WrittenEvent::new(
-                    &Event::new(
+                    Event::new(
+                        &aggregate_id_2,
+                        &TestEvent {
+                            name: "event-name".to_string(),
+                            content: "event-2".to_string(),
+                        },
+                    ),
+                    Event::new(
                         &aggregate_id_1,
-                        &version2,
                         &TestEvent {
                             name: "event-name".to_string(),
                             content: "event-3".to_string(),
                         },
                     ),
-                    SystemTime::from(DateTime::parse_from_rfc3339("2021-01-01T01:01:02Z").unwrap()),
+                    Event::new(
+                        &aggregate_id_2,
+                        &TestEvent {
+                            name: "event-name".to_string(),
+                            content: "event-4".to_string(),
+                        },
+                    ),
+                ]
+            ))
+        );
+
+        assert_eq!(
+            vec![
+                &WrittenEvent::new(
+                    &VersionedEvent::new(
+                        Version::from(2),
+                        aggregate_id_1.clone(),
+                        TestEvent {
+                            name: "event-name".to_string(),
+                            content: "event-1".to_string(),
+                        }
+                        .marshal_json(),
+                        "event-name".to_string(),
+                    ),
+                    SystemTime::from(DateTime::parse_from_rfc3339("2021-01-01T01:01:00Z").unwrap()),
+                    1,
+                ),
+                &WrittenEvent::new(
+                    &VersionedEvent::new(
+                        Version::from(4),
+                        aggregate_id_1.clone(),
+                        TestEvent {
+                            name: "event-name".to_string(),
+                            content: "event-3".to_string(),
+                        }
+                        .marshal_json(),
+                        "event-name".to_string(),
+                    ),
+                    SystemTime::from(DateTime::parse_from_rfc3339("2021-01-01T01:01:04Z").unwrap()),
                     3,
                 )
             ],
@@ -170,29 +173,32 @@ mod test {
         let aggregate_id_1 =
             AggregateId::from(&Uuid::new_v5(&Uuid::new_v4(), "aggregate-1".as_bytes()));
 
-        let version1 = Version::from(1);
         assert_eq!(
             Ok(()),
-            stream.write(&mut vec![Event::new(
-                &aggregate_id_1,
-                &version1,
-                &TestEvent {
-                    name: "event-name".to_string(),
-                    content: "event-1".to_string(),
-                },
-            )])
+            stream.write(&mut VersionedEvents::new(
+                Version::from(1),
+                vec![Event::new(
+                    &aggregate_id_1,
+                    &TestEvent {
+                        name: "event-name".to_string(),
+                        content: "event-1".to_string(),
+                    },
+                )]
+            ))
         );
 
         assert_eq!(
             Err(Error::OptimistLockViolation),
-            stream.write(&mut vec![Event::new(
-                &aggregate_id_1,
-                &version1,
-                &TestEvent {
-                    name: "event-name".to_string(),
-                    content: "event-1".to_string(),
-                },
-            )])
+            stream.write(&mut VersionedEvents::new(
+                Version::from(1),
+                vec![Event::new(
+                    &aggregate_id_1,
+                    &TestEvent {
+                        name: "event-name".to_string(),
+                        content: "event-1".to_string(),
+                    },
+                )]
+            ))
         );
     }
 }
