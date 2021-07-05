@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use crate::common;
 use crate::common::es;
-use crate::common::es::Payload;
+use crate::common::es::{Payload, WrittenEvent};
 use crate::domain;
 use crate::domain::srag::vo;
 
@@ -51,7 +51,7 @@ impl RegionalWeeklyReport {
 }
 
 impl es::Aggregate for RegionalWeeklyReport {
-    fn handle(&mut self, event: &es::WrittenEvent) {
+    fn handle(&mut self, event: &WrittenEvent) {
         match event.name.as_str() {
             domain::REGION_WEEKLY_EVENT_DETECTED_TYPE => {
                 let payload =

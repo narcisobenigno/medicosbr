@@ -2,9 +2,10 @@ use std::collections::HashMap;
 use std::fmt;
 
 use crate::common::clock::{Clock, InMemoryClock};
+use crate::common::es::written_event::WrittenEvent;
 use crate::common::es::VersionedEvents;
 
-use super::{AggregateId, Event, Version, WrittenEvent};
+use super::{AggregateId, Event, Version};
 
 #[derive(Debug, PartialEq)]
 pub enum Error {
@@ -79,9 +80,10 @@ mod test {
     use uuid::Uuid;
 
     use crate::common::clock;
+    use crate::common::es::written_event::WrittenEvent;
     use crate::common::es::{Payload, VersionedEvent};
 
-    use super::super::{TestEvent, Version, WrittenEvent};
+    use super::super::{TestEvent, Version};
     use super::*;
 
     #[test]

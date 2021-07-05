@@ -1,10 +1,7 @@
-use std::fmt::Debug;
-use std::time::SystemTime;
-
 use serde::Serialize;
+use std::fmt::Debug;
 
-use super::{AggregateId, Version};
-use crate::common::es::VersionedEvent;
+use super::AggregateId;
 
 pub trait Payload: Debug + Sized {
     type UnmarshalErr;
@@ -31,35 +28,13 @@ impl Event {
     }
 }
 
-#[derive(Debug, PartialEq, Clone)]
-pub struct WrittenEvent {
-    pub aggregate_id: AggregateId,
-    pub version: Version,
-    pub name: String,
-    pub payload: String,
-    recorded_at: SystemTime,
-    position: u64,
-}
-
-impl WrittenEvent {
-    pub fn new(event: &VersionedEvent, recorded_at: SystemTime, position: u64) -> WrittenEvent {
-        WrittenEvent {
-            aggregate_id: event.aggregate_id.clone(),
-            version: event.version.clone(),
-            name: event.name.clone(),
-            payload: event.payload.clone(),
-            recorded_at,
-            position,
-        }
-    }
-}
-
 #[cfg(test)]
 mod test {
     use uuid::Uuid;
 
-    use super::{AggregateId, Event};
     use crate::common::es::test_support::TestEvent;
+
+    use super::{AggregateId, Event};
 
     #[test]
     fn it_is_eq_comparable() {

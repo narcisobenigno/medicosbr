@@ -1,9 +1,10 @@
+use serde::{Deserialize, Serialize};
+
 use crate::common;
 use crate::common::es;
 use crate::domain;
 use crate::domain::srag::vo;
 use crate::domain::RegionalWeeklyReport;
-use serde::{Deserialize, Serialize};
 
 pub const REGION_WEEKLY_EVENT_DETECTED_TYPE: &str = "RegionWeeklyEventDetected";
 pub const REGION_WEEKLY_EVENT_TOTAL_REPORTED_CHANGED: &str =
@@ -93,13 +94,15 @@ pub struct RegionWeeklyUpload {
 
 #[cfg(test)]
 mod tests {
+    use std::time::SystemTime;
+
+    use chrono::DateTime;
+
     use crate::common::clock;
     use crate::common::es;
-    use crate::common::es::{Payload, Stream, VersionedEvents};
+    use crate::common::es::{Payload, Stream, VersionedEvents, WrittenEvent};
     use crate::domain;
     use crate::domain::srag::vo;
-    use chrono::DateTime;
-    use std::time::SystemTime;
 
     #[test]
     fn it_uploads_a_new() {
@@ -120,7 +123,7 @@ mod tests {
         });
         assert_eq!(Ok(()), result);
         assert_eq!(
-            vec![&es::WrittenEvent::new(
+            vec![&WrittenEvent::new(
                 &es::VersionedEvent::new(
                     es::Version::from(1),
                     aggregate_id.clone(),
@@ -194,7 +197,7 @@ mod tests {
         assert_eq!(Ok(()), result);
         let events = stream.read_by_aggregate_id(&aggregate_id1);
         assert_eq!(
-            [&es::WrittenEvent::new(
+            [&WrittenEvent::new(
                 &es::VersionedEvent::new(
                     es::Version::from(2),
                     aggregate_id1.clone(),

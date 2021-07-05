@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use crate::common::es::WrittenEvent;
+use crate::common::es::written_event::WrittenEvent;
 use uuid::Uuid;
 
 #[derive(Debug, PartialEq, Eq, Hash, Clone, Default)]

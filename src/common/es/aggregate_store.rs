@@ -25,14 +25,16 @@ impl<'a> AggregateStore<'a> {
 
 #[cfg(test)]
 mod test {
+    use std::time::SystemTime;
+
+    use chrono::DateTime;
+    use uuid::Uuid;
+
     use crate::common::clock;
     use crate::common::es;
     use crate::common::es::stream::Stream;
     use crate::common::es::test_support::TestEvent;
-    use crate::common::es::{Version, VersionedEvents};
-    use chrono::DateTime;
-    use std::time::SystemTime;
-    use uuid::Uuid;
+    use crate::common::es::{written_event, Version, VersionedEvents};
 
     #[test]
     fn it_loads_aggregate() {
@@ -109,7 +111,7 @@ mod test {
     }
 
     impl es::Aggregate for MyAggregate {
-        fn handle(&mut self, event: &es::WrittenEvent) {
+        fn handle(&mut self, event: &written_event::WrittenEvent) {
             match event.name.as_str() {
                 "event-name" => {
                     let result: TestEvent = serde_json::from_str(event.payload.as_str()).unwrap();
